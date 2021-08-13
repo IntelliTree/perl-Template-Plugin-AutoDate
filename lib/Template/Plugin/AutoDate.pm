@@ -2,7 +2,6 @@ package Template::Plugin::AutoDate;
 use strict;
 use warnings;
 use parent 'DateTime';
-use Try::Tiny;
 use DateTime::Format::Flexible;
 
 # ABSTRACT: Enhance Template Toolkit with easy access to DateTime and DateTime::Format::Flexible
@@ -24,8 +23,9 @@ use DateTime::Format::Flexible;
 =head1 DESCRIPTION
 
 This module allows you to access the full power of L<DateTime> from within
-Template Toolkit.  Since you don't always have date objects, it also allows
-you to coerce arbitrary strings into DateTime using L<DateTime::Format::Flexible>.
+L<Template Toolkit|Template>.  Since you don't always have date objects in the data,
+it also allows you to coerce arbitrary strings into DateTime using
+L<DateTime::Format::Flexible>.
 
 When you use this plugin, it installs two vmethods into your current Template
 context:
@@ -35,7 +35,7 @@ context:
 =item coerce_date
 
 This can be called on any scalar, and it will parse the scalar with
-L<DateTime::Format::Flexible>.  It returns undef if the string cannot be
+L<DateTime::Format::Flexible>.  It returns C<undef> if the string cannot be
 parsed, allowing you to continue chaining calls on it and get TT's behavior
 for undefined values.
 
@@ -45,9 +45,9 @@ un-altered.
 =item strftime
 
 When called on a scalar, this coerces it to a DateTime, and if defined, then
-calls the ".strftime" method on it.  This means you can now call "strftime"
-on any date field you like regardless of whether it's been inflated to a
-DateTime object by your controller.
+calls the L<strftime|DateTime/strftime> method on it.  This means you can now
+call C<strftime> on any date field you like regardless of whether it's been
+inflated to a DateTime object by your controller.
 
 =back
 
@@ -77,7 +77,7 @@ sub load {
   [% USE AutoDate %]
   [% USE x = AutoDate(@args) %]
 
-The first form of using the Autodate module gives you a variable named
+The first form of using the AutoDate module gives you a variable named
 Autodate which is a subclass of DateTime containing the value of 'now'.
 (Since it is a DateTime, you may modify its contents! so there is no
 guarantee that it still holds the value of 'now'.)  The primary purpose
@@ -124,7 +124,7 @@ sub now {
   [% AutoDate.coerce("January 1, 2000") %]
 
 This class method is a shortcut to L<DateTime::Format::Flexible/parse_datetime>.
-Returns empty string if the date can't be parsed.
+Returns undef if the date can't be parsed.
 
 =cut
 
@@ -153,9 +153,9 @@ sub now_floating { DateTime->now(time_zone => 'local')->set_time_zone('floating'
 
 sub _coerce_datetime {
    my $thing= shift;
-   return '' unless defined $thing;
+   return undef unless defined $thing;
    return $thing if ref $thing && ref($thing)->isa('DateTime');
-   return eval { DateTime::Format::Flexible->parse_datetime($thing) } || '';
+   return eval { DateTime::Format::Flexible->parse_datetime($thing) };
 }
 
 sub _loose_strftime {
@@ -164,5 +164,13 @@ sub _loose_strftime {
       unless ref $value && ref($value)->can("strftime");
    return $value? $value->strftime($format) : undef;
 }
+
+=head1 THANKS
+
+Thanks to L<Ellis, Partners in Management Solutions|http://www.epmsonline.com/> and
+L<Clippard Instrument Laboratory Inc.|http://www.clippard.com/> for
+supporting open source, including portions of this module.
+
+=cut
 
 1;
