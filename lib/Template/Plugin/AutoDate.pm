@@ -5,6 +5,9 @@ use parent 'DateTime';
 use Try::Tiny;
 use DateTime::Format::Flexible;
 
+# ABSTRACT: Enhance Template Toolkit with easy access to DateTime and DateTime::Format::Flexible
+# VERSION
+
 =head1 SYNOPSIS
 
   [% USE AutoDate %]
@@ -20,11 +23,11 @@ use DateTime::Format::Flexible;
 
 =head1 DESCRIPTION
 
-This module allows you to access the full power of DateTime from within
+This module allows you to access the full power of L<DateTime> from within
 Template Toolkit.  Since you don't always have date objects, it also allows
-you to coerce arbitrary strings into DateTime using DateTime::Format::Flexible.
+you to coerce arbitrary strings into DateTime using L<DateTime::Format::Flexible>.
 
-When you use this plugin, it installs two vmethods into your current Templte
+When you use this plugin, it installs two vmethods into your current Template
 context:
 
 =over
@@ -32,9 +35,9 @@ context:
 =item coerce_date
 
 This can be called on any scalar, and it will parse the scalar with
-DateTime::Format::Flexible.  It returns undef if the string cannot be parsed,
-allowing you to continue chaining calls on it and get TT's behavior for
-undefined values.
+L<DateTime::Format::Flexible>.  It returns undef if the string cannot be
+parsed, allowing you to continue chaining calls on it and get TT's behavior
+for undefined values.
 
 If called on an actual DateTime object, it returns the DateTime object
 un-altered.
@@ -118,10 +121,10 @@ sub now {
 
 =head2 coerce
 
-  [% AutoDate.coerce("Janyary 1, 2000") %]
+  [% AutoDate.coerce("January 1, 2000") %]
 
-This class method is a shortcut to DateTime::Format::Flexible::parse_datetime.
-Returns undef if the date can't be parsed.
+This class method is a shortcut to L<DateTime::Format::Flexible/parse_datetime>.
+Returns empty string if the date can't be parsed.
 
 =cut
 
@@ -131,35 +134,35 @@ sub coerce { _coerce_datetime($_[1]) }
 
   [% AutoDate.now_local %]
 
-Returns C<<DateTime->now(time_zone => "local")>>
+Returns C<< DateTime->now(time_zone => "local") >>
 
 =cut
 
-sub now_local { DateTime->new(time_zone => 'local') }
+sub now_local { DateTime->now(time_zone => 'local') }
 
 =head2 now_floating
 
   [% AutoDate.now_floating %]
 
-Returns C<<DateTime->now(time_zone => "floating")>>
+Returns C<< DateTime->now(time_zone => "local")->set_time_zone("floating") >>,
+which results in a floating DateTime that contains local time.
 
 =cut
 
-sub now_floating { DateTime->new(time_zone => 'local')->set_time_zone('floating') }
+sub now_floating { DateTime->now(time_zone => 'local')->set_time_zone('floating') }
 
 sub _coerce_datetime {
    my $thing= shift;
    return '' unless defined $thing;
    return $thing if ref $thing && ref($thing)->isa('DateTime');
-   my $d= try { DateTime::Format::Flexible->parse_datetime($thing) };
-   return defined $d? $d : $thing;
+   return eval { DateTime::Format::Flexible->parse_datetime($thing) } || '';
 }
 
 sub _loose_strftime {
    my ($value, $format)= @_;
-   $value= _coerce_datetime($value);
-   return unless ref $value && ref($value)->can("strftime");
-   return $value->strftime($format);
+   $value= _coerce_datetime($value)
+      unless ref $value && ref($value)->can("strftime");
+   return $value? $value->strftime($format) : undef;
 }
 
 1;
